@@ -43,5 +43,20 @@ namespace StudentFeesCollection.web.Controllers
                 return BadRequest(ex.Message);
             }
         }
-    }
+
+		[Route("auth/academicYears")]
+		[HttpGet]
+		public IHttpActionResult FetchAcademicYears()
+		{
+			try
+			{
+				var data = _authService.FetchAcademicYears();
+				return Ok(data);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+	}
 }

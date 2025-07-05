@@ -1,6 +1,7 @@
 ﻿using FeesCollection.DatabaseLayer.Helpers;
 using FeesCollection.ResponseModel.AuthModels;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 
 namespace FeesCollection.BusinessLayer.AuthService
@@ -9,6 +10,8 @@ namespace FeesCollection.BusinessLayer.AuthService
     {
         UserAuthModel Login(AuthModel model);
         StudentAuthResponseModel StudentLogin(StudentAuthModel model);
+
+        List<AcademicYearModel> FetchAcademicYears();
     }
 
     public class AuthService : IAuthService
@@ -20,10 +23,10 @@ namespace FeesCollection.BusinessLayer.AuthService
             _dBHelper = new DBHelper();
             _dBHelper.CreateDBObjects(ConfigurationManager.AppSettings["mysqlConnectionString"], DBHelper.DbProviders.MySql);
         }
-        #endregion
+		#endregion
 
-        #region Methods
-        public UserAuthModel Login(AuthModel model)
+		#region Methods
+		public UserAuthModel Login(AuthModel model)
         {
             UserAuthModel userInfo = new UserAuthModel();
             _dBHelper.AddParameter("p_username", model.MobileNumber);
@@ -104,6 +107,38 @@ namespace FeesCollection.BusinessLayer.AuthService
                 }
             }
         }
-        #endregion
-    }
+
+		public List<AcademicYearModel> FetchAcademicYears()
+		{
+			List<AcademicYearModel> academicYearModel = new List<AcademicYearModel>();
+			var reader = _dBHelper.ExecuteReader("sp_admin_get_academicyears", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+			try
+			{
+				if (reader.HasRows)
+				{
+					while (reader.Read())
+					{
+                        academicYearModel.Add(new AcademicYearModel()
+                        {
+                            Id = Convert.ToInt32(reader["id"]),
+                            AcademicYear = reader["academic_year"].ToString()
+                        });
+					}
+					return academicYearModel;
+				}
+				else
+				{
+					throw new Exception("Sorry. Something went wrong. Please contact administrator.");
+				}
+			}
+			finally
+			{
+				if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
+				{
+					_dBHelper.connection.Close();
+				}
+			}
+		}
+		#endregion
+	}
 }

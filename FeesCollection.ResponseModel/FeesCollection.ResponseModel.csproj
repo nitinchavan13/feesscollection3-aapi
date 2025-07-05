@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AuthModels\AcademicYearModel.cs" />
     <Compile Include="AuthModels\AuthModels.cs" />
     <Compile Include="AuthModels\StudentAuthModel.cs" />
     <Compile Include="BaseModels\BaseModel.cs" />
