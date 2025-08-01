@@ -1,17 +1,21 @@
 ﻿using FeesCollection.DatabaseLayer.Helpers;
 using FeesCollection.ResponseModel.AuthModels;
+using FeesCollection.ResponseModel.Utility;
+using MySqlConnector;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
+using System.Threading.Tasks;
 
 namespace FeesCollection.BusinessLayer.AuthService
 {
     public interface IAuthService
     {
-        UserAuthModel Login(AuthModel model);
-        StudentAuthResponseModel StudentLogin(StudentAuthModel model);
+        Task<UserAuthModel> Login(AuthModel model);
+        Task<StudentAuthResponseModel> StudentLogin(StudentAuthModel model);
 
-        List<AcademicYearModel> FetchAcademicYears();
+        Task<List<AcademicYearModel>> FetchAcademicYears();
     }
 
     public class AuthService : IAuthService
@@ -20,125 +24,115 @@ namespace FeesCollection.BusinessLayer.AuthService
         DBHelper _dBHelper;
         public AuthService()
         {
-            _dBHelper = new DBHelper();
-            _dBHelper.CreateDBObjects(ConfigurationManager.AppSettings["mysqlConnectionString"], DBHelper.DbProviders.MySql);
+            _dBHelper = new DBHelper(ConfigurationManager.AppSettings["mysqlConnectionString"]);
         }
 		#endregion
 
 		#region Methods
-		public UserAuthModel Login(AuthModel model)
+		public async Task<UserAuthModel> Login(AuthModel model)
         {
             UserAuthModel userInfo = new UserAuthModel();
-            _dBHelper.AddParameter("p_username", model.MobileNumber);
-            _dBHelper.AddParameter("p_password", model.Password);
-            _dBHelper.AddParameter("p_academicYearId", model.AcademicYearId);
-            var reader = _dBHelper.ExecuteReader("sp_admin_login", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[] {
+                new MySqlParameter("@p_username", model.MobileNumber),
+                new MySqlParameter("@p_password", model.Password),
+                new MySqlParameter("@p_academicYearId", model.AcademicYearId)
+            };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_admin_login", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    var row = result.Rows[0];
+                    if (Convert.ToBoolean(row["isactive"]))
                     {
-                        if (Convert.ToBoolean(reader["isactive"]) == true)
-                        {
-                            userInfo.Id = Convert.ToInt32(reader["id"]);
-                            userInfo.UserName = reader["username"].ToString();
-                            userInfo.AcademicYearId = Convert.ToInt32(reader["academicYearId"]);
-                        }
-                        else
-                        {
-                            throw new Exception("Sorry, your account is inactive. Please contact administrator");
-                        }
+                        userInfo.Id = Convert.ToInt32(row["id"]);
+                        userInfo.UserName = row["username"].ToString();
+                        userInfo.AcademicYearId = Convert.ToInt32(row["academicYearId"]);
 
+                        return userInfo;
                     }
-                    return userInfo;
+                    else
+                    {
+                        throw new Exception("Sorry, your account is inactive. Please contact administrator");
+                    }
                 }
                 else
                 {
                     throw new Exception("User name or password is miss matched.");
                 }
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
 
-        public StudentAuthResponseModel StudentLogin(StudentAuthModel model)
+        public async Task<StudentAuthResponseModel> StudentLogin(StudentAuthModel model)
         {
             StudentAuthResponseModel userInfo = new StudentAuthResponseModel();
-            _dBHelper.AddParameter("p_username", model.UserEmail);
-            _dBHelper.AddParameter("p_password", model.Password);
-            var reader = _dBHelper.ExecuteReader("sp_student_login", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[] {
+                new MySqlParameter("@p_username", model.UserEmail),
+                new MySqlParameter("@p_password", model.Password)
+            };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_admin_login", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    var row = result.Rows[0];
+                    if (Convert.ToBoolean(row["isactive"]))
                     {
-                        if (Convert.ToBoolean(reader["isactive"]) == true)
-                        {
-                            userInfo.Id = Convert.ToInt32(reader["id"]);
-                            userInfo.Name = reader["name"].ToString();
-                            userInfo.Email = reader["emailid"].ToString();
-                            userInfo.AcademicYearId = Convert.ToInt32(reader["academicyearid"]);
-                        }
-                        else
-                        {
-                            throw new Exception("Sorry, your account is inactive. Please contact administrator");
-                        }
+                        userInfo.Id = Convert.ToInt32(row["id"]);
+                        userInfo.Name = row["name"].ToString();
+                        userInfo.Email = row["emailid"].ToString();
+                        userInfo.AcademicYearId = Convert.ToInt32(row["academicyearid"]);
 
+                        return userInfo;
                     }
-                    return userInfo;
+                    else
+                    {
+                        throw new Exception("Sorry, your account is inactive. Please contact administrator");
+                    }
                 }
                 else
                 {
                     throw new Exception("User name or password is miss matched.");
                 }
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
 
-		public List<AcademicYearModel> FetchAcademicYears()
-		{
-			List<AcademicYearModel> academicYearModel = new List<AcademicYearModel>();
-			var reader = _dBHelper.ExecuteReader("sp_admin_get_academicyears", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
-			try
-			{
-				if (reader.HasRows)
-				{
-					while (reader.Read())
-					{
+        public async Task<List<AcademicYearModel>> FetchAcademicYears()
+        {
+            List<AcademicYearModel> academicYearModel = new List<AcademicYearModel>();
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_admin_get_academicyears", parameters: null);
+            try
+            {
+                if (result.Rows.Count > 0)
+                {
+                    foreach (DataRow row in result.Rows)
+                    {
                         academicYearModel.Add(new AcademicYearModel()
                         {
-                            Id = Convert.ToInt32(reader["id"]),
-                            AcademicYear = reader["academic_year"].ToString()
+                            Id = Convert.ToInt32(row["id"]),
+                            AcademicYear = row["academic_year"].ToString()
                         });
-					}
-					return academicYearModel;
-				}
-				else
-				{
-					throw new Exception("Sorry. Something went wrong. Please contact administrator.");
-				}
-			}
-			finally
-			{
-				if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-				{
-					_dBHelper.connection.Close();
-				}
-			}
-		}
-		#endregion
-	}
+                    }
+                    return academicYearModel;
+                }
+                else
+                {
+                    throw new Exception("Sorry. Something went wrong. Please contact administrator.");
+                }
+            }
+            catch (Exception)
+            {
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
+            }
+        }
+        #endregion
+    }
 }

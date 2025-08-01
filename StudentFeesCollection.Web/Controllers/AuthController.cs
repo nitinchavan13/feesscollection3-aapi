@@ -1,6 +1,7 @@
 ﻿using FeesCollection.BusinessLayer.AuthService;
 using FeesCollection.ResponseModel.AuthModels;
 using System;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.web.Controllers
@@ -16,11 +17,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("auth/login")]
         [HttpPost]
-        public IHttpActionResult Login(AuthModel model)
+        public async Task<IHttpActionResult> Login(AuthModel model)
         {
             try
             {
-                var data = _authService.Login(model);
+                var data = await _authService.Login(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -31,11 +32,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("auth/studentLogin")]
         [HttpPost]
-        public IHttpActionResult StudentLogin(StudentAuthModel model)
+        public async Task<IHttpActionResult> StudentLogin(StudentAuthModel model)
         {
             try
             {
-                var data = _authService.StudentLogin(model);
+                var data = await _authService.StudentLogin(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -44,19 +45,19 @@ namespace StudentFeesCollection.web.Controllers
             }
         }
 
-		[Route("auth/academicYears")]
-		[HttpGet]
-		public IHttpActionResult FetchAcademicYears()
-		{
-			try
-			{
-				var data = _authService.FetchAcademicYears();
-				return Ok(data);
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
-		}
-	}
+        [Route("auth/academicYears")]
+        [HttpPost]
+        public async Task<IHttpActionResult> FetchAcademicYears()
+        {
+            try
+            {
+                var data = await _authService.FetchAcademicYears();
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+    }
 }
