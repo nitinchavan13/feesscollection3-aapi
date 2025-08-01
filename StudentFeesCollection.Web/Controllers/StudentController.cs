@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.web.Controllers
@@ -22,11 +23,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/getStudents")]
         [HttpPost]
-        public IHttpActionResult GetStudents(BaseModel model)
+        public async Task<IHttpActionResult> GetStudents(BaseModel model)
         {
             try
             {
-                var data = _studentService.GetStudents(model.AcademicYearId);
+                var data = await _studentService.GetStudents(model.AcademicYearId);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -37,11 +38,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/getStudentDetails/{id}")]
         [HttpPost]
-        public IHttpActionResult GetStudentDetails(int id)
+        public async Task<IHttpActionResult> GetStudentDetails(int id)
         {
             try
             {
-                var data = _studentService.GetStudentDetails(id);
+                var data = await _studentService.GetStudentDetails(id);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -52,11 +53,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/addStudent")]
         [HttpPost]
-        public IHttpActionResult AddStudent(StudentModel model)
+        public async Task<IHttpActionResult> AddStudent(StudentModel model)
         {
             try
             {
-                var data = _studentService.AddStudent(model);
+                var data = await _studentService.AddStudent(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -67,11 +68,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/editStudent")]
         [HttpPost]
-        public IHttpActionResult EditStudent(StudentModel model)
+        public async Task<IHttpActionResult> EditStudent(StudentModel model)
         {
             try
             {
-                var data = _studentService.EditStudent(model);
+                var data = await _studentService.EditStudent(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -82,11 +83,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/deleteStudent/{id}/{academicYearId}")]
         [HttpPost]
-        public IHttpActionResult DeleteStudent(int id, int academicYearId)
+        public async Task<IHttpActionResult> DeleteStudent(int id, int academicYearId)
         {
             try
             {
-                var data = _studentService.DeleteStudent(id, academicYearId);
+                var data = await _studentService.DeleteStudent(id, academicYearId);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -97,11 +98,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/addStudentFees/{id}")]
         [HttpPost]
-        public IHttpActionResult AddStudentFees(int id, StudentFeeModel model)
+        public async Task<IHttpActionResult> AddStudentFees(int id, StudentFeeModel model)
         {
             try
             {
-                var data = _studentService.AddStudentFees(id, model);
+                var data = await _studentService.AddStudentFees(id, model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -112,11 +113,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("student/editStudentFees/{id}")]
         [HttpPost]
-        public IHttpActionResult EditStudentFees(int id, StudentFeeModel model)
+        public async Task<IHttpActionResult> EditStudentFees(int id, StudentFeeModel model)
         {
             try
             {
-                var data = _studentService.EditStudentFees(id, model);
+                var data = await _studentService.EditStudentFees(id, model);
                 return Ok(data);
             }
             catch (Exception ex)

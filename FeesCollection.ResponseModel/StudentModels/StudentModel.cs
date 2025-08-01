@@ -28,6 +28,8 @@ namespace FeesCollection.ResponseModel.StudentModels
         public string AadharNumber { get; set; }
         public string PanNumber { get; set; }
         public bool IsHavingHeavyLicence { get; set; }
+
+        public string ProfilePic { get; set; }
     }
 
     public class StudentDetailsModel
