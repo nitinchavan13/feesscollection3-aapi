@@ -59,6 +59,7 @@
     <Compile Include="StudentModels\StudentEnquiryModel.cs" />
     <Compile Include="StudentModels\StudentFeeModel.cs" />
     <Compile Include="StudentModels\StudentModel.cs" />
+    <Compile Include="Utility\AppConstants.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="obj\Debug\DesignTimeResolveAssemblyReferencesInput.cache" />
