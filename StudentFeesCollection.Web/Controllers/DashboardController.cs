@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.web.Controllers
@@ -20,11 +21,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("dashboard/getDashboardCards")]
         [HttpPost]
-        public IHttpActionResult GetDashboardCards(BaseModel model)
+        public async Task<IHttpActionResult> GetDashboardCards(BaseModel model)
         {
             try
             {
-                var data = _dashboardService.GetDashboardCards(model);
+                var data = await _dashboardService.GetDashboardCards(model);
                 return Ok(data);
             }
             catch (Exception ex)

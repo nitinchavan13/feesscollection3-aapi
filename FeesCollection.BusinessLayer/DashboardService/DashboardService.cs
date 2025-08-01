@@ -1,9 +1,12 @@
 ﻿using FeesCollection.DatabaseLayer.Helpers;
 using FeesCollection.ResponseModel.BaseModels;
 using FeesCollection.ResponseModel.DashboardModels;
+using FeesCollection.ResponseModel.Utility;
+using MySqlConnector;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +15,7 @@ namespace FeesCollection.BusinessLayer.DashboardService
 {
     public interface IDashboardService
     {
-        DashboardCardModel GetDashboardCards(BaseModel model);
+        Task<DashboardCardModel> GetDashboardCards(BaseModel model);
     }
 
     public class DashboardService : IDashboardService
@@ -21,41 +24,36 @@ namespace FeesCollection.BusinessLayer.DashboardService
         DBHelper _dBHelper;
         public DashboardService()
         {
-            _dBHelper = new DBHelper();
-            _dBHelper.CreateDBObjects(ConfigurationManager.AppSettings["mysqlConnectionString"], DBHelper.DbProviders.MySql);
+            _dBHelper = new DBHelper(ConfigurationManager.AppSettings["mysqlConnectionString"]);
         }
         #endregion
 
         #region Methods
-        public DashboardCardModel GetDashboardCards(BaseModel model)
+        public async Task<DashboardCardModel> GetDashboardCards(BaseModel model)
         {
-            _dBHelper.AddParameter("p_userid", model.UserId);
-            _dBHelper.AddParameter("p_academicid", model.AcademicYearId);
-            var reader = _dBHelper.ExecuteReader("sp_dashboard_cards_get", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[] {
+                new MySqlParameter("@p_userid", model.UserId),
+                new MySqlParameter("@p_academicid", model.AcademicYearId)
+            };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_dashboard_cards_get", parameters);
             try
             {
-                if (reader.HasRows)
+
+                if (result.Rows.Count > 0)
                 {
                     DashboardCardModel cards = new DashboardCardModel();
-                    while (reader.Read())
-                    {
-                        cards.TotalStudents = Convert.ToInt32(reader["totalstudents"]);
-                        cards.TotalCredit = Convert.ToDecimal(reader["totalcredit"]);
-                        cards.TotalDebit = Convert.ToDecimal(reader["totaldebit"]);
-                    }
+                    var row = result.Rows[0];
+                    cards.TotalStudents = Convert.ToInt32(row["totalstudents"]);
+                    cards.TotalCredit = Convert.ToDecimal(row["totalcredit"]);
+                    cards.TotalDebit = Convert.ToDecimal(row["totaldebit"]);
+
                     return cards;
                 }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
         #endregion
