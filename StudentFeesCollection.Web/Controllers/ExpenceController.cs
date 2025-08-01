@@ -2,6 +2,7 @@
 using FeesCollection.ResponseModel.BaseModels;
 using FeesCollection.ResponseModel.ExpenceModels;
 using System;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.web.Controllers
@@ -17,11 +18,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("expences/getExpences")]
         [HttpPost]
-        public IHttpActionResult GetExpences(BaseModel model)
+        public async Task<IHttpActionResult> GetExpences(BaseModel model)
         {
             try
             {
-                var data = _expenceService.GetExpences(model);
+                var data = await _expenceService.GetExpences(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -32,11 +33,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("expences/addExpence")]
         [HttpPost]
-        public IHttpActionResult AddExpence(ExpenceModel model)
+        public async Task<IHttpActionResult> AddExpence(ExpenceModel model)
         {
             try
             {
-                var data = _expenceService.AddExpence(model);
+                var data = await _expenceService.AddExpence(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -47,11 +48,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("expences/editExpence")]
         [HttpPost]
-        public IHttpActionResult EditExpence(ExpenceModel model)
+        public async Task<IHttpActionResult> EditExpence(ExpenceModel model)
         {
             try
             {
-                var data = _expenceService.EditExpence(model);
+                var data = await _expenceService.EditExpence(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -62,11 +63,11 @@ namespace StudentFeesCollection.web.Controllers
 
         [Route("expences/deleteExpence")]
         [HttpPost]
-        public IHttpActionResult DeleteExpence(ExpenceModel model)
+        public async Task<IHttpActionResult> DeleteExpence(ExpenceModel model)
         {
             try
             {
-                var data = _expenceService.DeleteExpence(model);
+                var data = await _expenceService.DeleteExpence(model);
                 return Ok(data);
             }
             catch (Exception ex)
