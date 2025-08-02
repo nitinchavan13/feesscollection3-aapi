@@ -1,9 +1,14 @@
-﻿using FeesCollection.DatabaseLayer.Helpers;
+﻿using FeesCollection.BusinessLayer.Utility;
+using FeesCollection.DatabaseLayer.Helpers;
 using FeesCollection.ResponseModel.BaseModels;
+using FeesCollection.ResponseModel.ExamModels;
 using FeesCollection.ResponseModel.StudentModels;
+using FeesCollection.ResponseModel.Utility;
+using MySqlConnector;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,8 +17,8 @@ namespace FeesCollection.BusinessLayer.StudentEnquiry
 {
     public interface IStudentEnquiryService
     {
-        bool CreateNewEnquiry(StudentEnquiryModel model);
-        List<StudentEnquiryModel> GetAllEnquiries(BaseModel model);
+        Task<bool> CreateNewEnquiry(StudentEnquiryModel model);
+        Task<List<StudentEnquiryModel>> GetAllEnquiries(BaseModel model);
     }
 
     public class StudentEnquiryService : IStudentEnquiryService
@@ -22,29 +27,31 @@ namespace FeesCollection.BusinessLayer.StudentEnquiry
         DBHelper _dBHelper;
         public StudentEnquiryService()
         {
-            _dBHelper = new DBHelper();
-            _dBHelper.CreateDBObjects(ConfigurationManager.AppSettings["mysqlConnectionString"], DBHelper.DbProviders.MySql);
+            _dBHelper = new DBHelper(ConfigurationManager.AppSettings["mysqlConnectionString"]);
         }
         #endregion
 
-        public bool CreateNewEnquiry(StudentEnquiryModel model)
+        public async Task<bool> CreateNewEnquiry(StudentEnquiryModel model)
         {
-            _dBHelper.AddParameter("p_firstname", model.FirstName);
-            _dBHelper.AddParameter("p_lastname", model.LastName);
-            _dBHelper.AddParameter("p_middlename", model.MiddleName);
-            _dBHelper.AddParameter("p_mobilenumber", model.MobileNumber);
-            _dBHelper.AddParameter("p_emailid", model.EmailId);
-            _dBHelper.AddParameter("p_address", model.Address);
-            _dBHelper.AddParameter("p_aadharnumber", model.AadharNumber);
-            _dBHelper.AddParameter("p_tenthmarks", model.TenthMarks);
-            _dBHelper.AddParameter("p_twelththmarks", model.TwelthMarks);
-            _dBHelper.AddParameter("p_othereduname", model.OtherEduName);
-            _dBHelper.AddParameter("p_otheredumarks", model.OtherEduMarks);
-            _dBHelper.AddParameter("p_enquirydate", DateTime.Now);
-            _dBHelper.AddParameter("p_isvalid", true);
+            MySqlParameter[] parameters = new MySqlParameter[]
+            {
+                new MySqlParameter("p_firstname", model.FirstName),
+                new MySqlParameter("p_lastname", model.LastName),
+                new MySqlParameter("p_middlename", model.MiddleName),
+                new MySqlParameter("p_mobilenumber", model.MobileNumber),
+                new MySqlParameter("p_emailid", model.EmailId),
+                new MySqlParameter("p_address", model.Address),
+                new MySqlParameter("p_aadharnumber", model.AadharNumber),
+                new MySqlParameter("p_tenthmarks", model.TenthMarks),
+                new MySqlParameter("p_twelththmarks", model.TwelthMarks),
+                new MySqlParameter("p_othereduname", model.OtherEduName),
+                new MySqlParameter("p_otheredumarks", model.OtherEduMarks),
+                new MySqlParameter("p_enquirydate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(DateTime.UtcNow)),
+                new MySqlParameter("p_isvalid", true)
+            };
             try
             {
-                _dBHelper.ExecuteNonQuery("sp_student_enquiry_add", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+                await _dBHelper.ExecuteNonQueryAsync("sp_student_enquiry_add", parameters);
 
                 return true;
             }
@@ -54,48 +61,41 @@ namespace FeesCollection.BusinessLayer.StudentEnquiry
             }
         }
 
-        public List<StudentEnquiryModel> GetAllEnquiries(BaseModel model)
+        public async Task<List<StudentEnquiryModel>> GetAllEnquiriesAsync(BaseModel model)
         {
             List<StudentEnquiryModel> enquiries = new List<StudentEnquiryModel>();
-            var reader = _dBHelper.ExecuteReader("sp_student_enquiry_get", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_student_enquiry_get", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    foreach (DataRow row in result.Rows)
                     {
                         enquiries.Add(new StudentEnquiryModel()
                         {
-                            Id = Convert.ToInt32(reader["id"]),
-                            FirstName = reader["firstname"].ToString(),
-                            LastName = reader["lastname"].ToString(),
-                            MiddleName = reader["middlename"].ToString(),
-                            MobileNumber = reader["mobilenumber"].ToString(),
-                            EmailId = reader["emailid"].ToString(),
-                            AadharNumber = reader["aadharnumber"].ToString(),
-                            Address = reader["address"].ToString(),
-                            TenthMarks = Convert.ToDecimal(reader["tenthmarks"]),
-                            TwelthMarks = Convert.ToDecimal(reader["twelthmarks"]),
-                            OtherEduName = reader["tenthmarks"].ToString(),
-                            OtherEduMarks = Convert.ToDecimal(reader["otheredumarks"]),
-                            EnquiryDate = Convert.ToDateTime(reader["enquirydate"]),
-                            IsValid = Convert.ToBoolean(reader["isvalid"])
-                           
+                            Id = Convert.ToInt32(row["id"]),
+                            FirstName = row["firstname"].ToString(),
+                            LastName = row["lastname"].ToString(),
+                            MiddleName = row["middlename"].ToString(),
+                            MobileNumber = row["mobilenumber"].ToString(),
+                            EmailId = row["emailid"].ToString(),
+                            AadharNumber = row["aadharnumber"].ToString(),
+                            Address = row["address"].ToString(),
+                            TenthMarks = Convert.ToDecimal(row["tenthmarks"]),
+                            TwelthMarks = Convert.ToDecimal(row["twelthmarks"]),
+                            OtherEduName = row["tenthmarks"].ToString(),
+                            OtherEduMarks = Convert.ToDecimal(row["otheredumarks"]),
+                            EnquiryDate = Convert.ToDateTime(row["enquirydate"]),
+                            IsValid = Convert.ToBoolean(row["isvalid"])
+
                         });
                     }
-                    return enquiries.OrderByDescending(x => x.EnquiryDate).ToList();
                 }
-                else
-                {
-                    return null;
-                }
+                return enquiries.OrderByDescending(x => x.EnquiryDate).ToList();
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
     }

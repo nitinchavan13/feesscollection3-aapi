@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.Web.Controllers
@@ -21,11 +22,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("enquiry/addStudentEnquiry")]
         [HttpPost]
-        public IHttpActionResult AddStudentEnquiry(StudentEnquiryModel model)
+        public async Task<IHttpActionResult> AddStudentEnquiry(StudentEnquiryModel model)
         {
             try
             {
-                var data = _studentEnquiryService.CreateNewEnquiry(model);
+                var data = await _studentEnquiryService.CreateNewEnquiry(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -36,11 +37,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("enquiry/getStudentEnquiry")]
         [HttpPost]
-        public IHttpActionResult getStudentEnquiry(BaseModel model)
+        public async Task<IHttpActionResult> getStudentEnquiry(BaseModel model)
         {
             try
             {
-                var data = _studentEnquiryService.GetAllEnquiries(model);
+                var data = await _studentEnquiryService.GetAllEnquiries(model);
                 return Ok(data);
             }
             catch (Exception ex)
