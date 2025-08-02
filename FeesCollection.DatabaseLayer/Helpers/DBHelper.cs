@@ -290,45 +290,45 @@ namespace FeesCollection.DatabaseLayer.Helpers
         ////    }
         ////    return dsCurDet;
         ////}
-        public void SaveBulkStudentResponse(List<StudentBulkResponse> model)
-        {
-            StringBuilder sCommand = new StringBuilder("INSERT INTO `tblstudentexamattemptdetails`(`examattemptid`,`questionid`,`selectedoption`,`isanswercorrect`) VALUES ");
-            List<string> Rows = new List<string>();
-            foreach (var item in model)
-            {
-                Rows.Add(string.Format("('{0}','{1}', '{2}', '{3}')", MySqlHelper.EscapeString(item.Id.ToString()), MySqlHelper.EscapeString(item.QuestionId.ToString()), MySqlHelper.EscapeString(item.SelectedOption), MySqlHelper.EscapeString(item.IsAnswerCorrect ? "1" : "")));
-            }
-            sCommand.Append(string.Join(",", Rows));
-            sCommand.Append(";");
+        //public void SaveBulkStudentResponse(List<StudentBulkResponse> model)
+        //{
+        //    StringBuilder sCommand = new StringBuilder("INSERT INTO `tblstudentexamattemptdetails`(`examattemptid`,`questionid`,`selectedoption`,`isanswercorrect`) VALUES ");
+        //    List<string> Rows = new List<string>();
+        //    foreach (var item in model)
+        //    {
+        //        Rows.Add(string.Format("('{0}','{1}', '{2}', '{3}')", MySqlHelper.EscapeString(item.Id.ToString()), MySqlHelper.EscapeString(item.QuestionId.ToString()), MySqlHelper.EscapeString(item.SelectedOption), MySqlHelper.EscapeString(item.IsAnswerCorrect ? "1" : "")));
+        //    }
+        //    sCommand.Append(string.Join(",", Rows));
+        //    sCommand.Append(";");
 
-            try
-            {
-                if (connection.State == System.Data.ConnectionState.Closed)
-                {
-                    connection.Open();
-                }
-                BeginTransaction();
-                command.CommandType = CommandType.Text;
-                command.CommandText = sCommand.ToString();
-                command.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
-                RollbackTransaction();
-                throw (ex);
-            }
-            finally
-            {
-                CommitTransaction();
-                command.Parameters.Clear();
-                if (connection.State == System.Data.ConnectionState.Open)
-                {
-                    connection.Close();
-                    connection.Dispose();
-                    //command.Dispose();
-                }
-            }
-        }
+        //    try
+        //    {
+        //        if (connection.State == System.Data.ConnectionState.Closed)
+        //        {
+        //            connection.Open();
+        //        }
+        //        BeginTransaction();
+        //        command.CommandType = CommandType.Text;
+        //        command.CommandText = sCommand.ToString();
+        //        command.ExecuteNonQuery();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        RollbackTransaction();
+        //        throw (ex);
+        //    }
+        //    finally
+        //    {
+        //        CommitTransaction();
+        //        command.Parameters.Clear();
+        //        if (connection.State == System.Data.ConnectionState.Open)
+        //        {
+        //            connection.Close();
+        //            connection.Dispose();
+        //            //command.Dispose();
+        //        }
+        //    }
+        //}
         //#endregion
         //#endregion
         //#region enums
