@@ -54,17 +54,13 @@ namespace FeesCollection.BusinessLayer.StudentService
                     new MySqlParameter("@p_aadharno", studentModel.AadharNumber),
                     new MySqlParameter("@p_panno", studentModel.PanNumber),
                     new MySqlParameter("@p_heavylicence", studentModel.IsHavingHeavyLicence),
-                    new MySqlParameter("@p_courseid", studentModel.courseId)
+                    new MySqlParameter("@p_courseid", studentModel.CourseId),
+                    new MySqlParameter("@p_profilepic", studentModel.ProfilePic)
                 };
                 // Insert student
                 await _dBHelper.ExecuteStoredProcedureNonQueryAsync("sp_student_add", parameters);
-
-                int newStudentId = await this.GetLastInsertedId();
-                if (newStudentId != 0)
-                {
-                    await this.AssignCourse(newStudentId, studentModel.courseId);
-                    //SendSMS.SMSSend("", studentModel.MobileNumber);
-                }
+                //SendSMS.SMSSend("", studentModel.MobileNumber);
+                
                 // Fetch updated students list
                 students = await GetStudents(studentModel.AcademicYearId);
                 return students;
@@ -220,9 +216,7 @@ namespace FeesCollection.BusinessLayer.StudentService
                     new MySqlParameter("@p_aadharno", studentModel.AadharNumber),
                     new MySqlParameter("@p_panno", studentModel.PanNumber),
                     new MySqlParameter("@p_heavylicence", studentModel.IsHavingHeavyLicence),
-                    new MySqlParameter("@p_id", studentModel.Id),
-                    new MySqlParameter("@p_academicid", studentModel.AcademicYearId),
-                    new MySqlParameter("@p_courseid", studentModel.courseId)
+                    new MySqlParameter("@p_id", studentModel.Id)
                 };
                 await _dBHelper.ExecuteStoredProcedureNonQueryAsync("sp_student_update", parameters);
                 return await GetStudents(studentModel.AcademicYearId);
@@ -286,47 +280,6 @@ namespace FeesCollection.BusinessLayer.StudentService
             catch (Exception)
             {
                 throw new Exception(AppConstants.GENERIC_ERROR_MSG);
-            }
-        }
-        #endregion
-
-        #region Private Methods
-        private async Task<int> GetLastInsertedId()
-        {
-            var id = 0;
-            DataTable reader = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_student_get_last_inserted_id", parameters: null);
-            try
-            {
-                if (reader.Rows.Count > 0)
-                {
-                    DataRow row = reader.Rows[0];
-                    return Convert.ToInt32(row["id"]); ;
-                }
-                else
-                {
-                    return id;
-                }
-            }
-            catch (Exception)
-            {
-                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
-            }
-        }
-
-        private async Task<bool> AssignCourse(int studentId, int courseId)
-        {
-            MySqlParameter[] parameter = new MySqlParameter[] {
-                new MySqlParameter("@p_studentid", studentId),
-                new MySqlParameter("@p_courseid", courseId)
-            };
-            try
-            {
-                await _dBHelper.ExecuteStoredProcedureNonQueryAsync("sp_student_course_assign", parameter);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
             }
         }
         #endregion

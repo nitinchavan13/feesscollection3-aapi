@@ -273,7 +273,7 @@
     <Content Include="Scripts\jquery-3.3.1.slim.js" />
     <Content Include="Scripts\jquery-3.3.1.slim.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
-    <Content Include="Source\Images\Students\74bfb72d-81a5-4dac-bf67-9b050197c460.png" />
+    <Content Include="Source\Images\Students\default\74bfb72d-81a5-4dac-bf67-9b050197c460.png" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>

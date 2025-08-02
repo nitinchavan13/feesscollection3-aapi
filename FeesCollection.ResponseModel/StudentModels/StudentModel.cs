@@ -17,7 +17,7 @@ namespace FeesCollection.ResponseModel.StudentModels
         public string MobileNumber { get; set; }
         public string EmailId { get; set; }
         public string Address { get; set; }
-        public int courseId { get; set; }
+        public int CourseId { get; set; }
         public string CourseName { get; set; }
         public decimal TotalPaidFees { get; set; }
         public string Race { get; set; }
