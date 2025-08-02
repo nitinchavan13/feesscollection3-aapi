@@ -1,4 +1,5 @@
-﻿using FeesCollection.DatabaseLayer.Helpers;
+﻿using FeesCollection.BusinessLayer.Utility;
+using FeesCollection.DatabaseLayer.Helpers;
 using FeesCollection.ResponseModel.BaseModels;
 using FeesCollection.ResponseModel.ExpenceModels;
 using FeesCollection.ResponseModel.Utility;
@@ -48,7 +49,7 @@ namespace FeesCollection.BusinessLayer.ExpenceService
                         expences.Add(new ExpenceModel()
                         {
                             Id = Convert.ToInt32(row["id"]),
-                            ExpenceDate = Convert.ToDateTime(row["expencedate"]),
+                            ExpenceDate = TimezoneHelper.GetLocaltimeFromUniversal(Convert.ToDateTime(row["expencedate"])),
                             ExpenceAmount = Convert.ToDecimal(row["expenceamount"]),
                             ExpenceNote = row["expencenote"].ToString(),
                             ExpenceType = row["expencetype"].ToString()
@@ -70,7 +71,7 @@ namespace FeesCollection.BusinessLayer.ExpenceService
         {
             MySqlParameter[] parameters = new MySqlParameter[]
             {
-                new MySqlParameter("@p_expencedate", model.ExpenceDate),
+                new MySqlParameter("@p_expencedate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExpenceDate).Date),
                 new MySqlParameter("@p_expenceamount", model.ExpenceAmount),
                 new MySqlParameter("@p_expencenote", model.ExpenceNote),
                 new MySqlParameter("@p_expencetype", model.ExpenceType),
@@ -92,7 +93,7 @@ namespace FeesCollection.BusinessLayer.ExpenceService
         {
             MySqlParameter[] parameters = new MySqlParameter[]
             {
-                new MySqlParameter("@p_expencedate", model.ExpenceDate),
+                new MySqlParameter("@p_expencedate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExpenceDate).Date),
                 new MySqlParameter("@p_expenceamount", model.ExpenceAmount),
                 new MySqlParameter("@p_expencenote", model.ExpenceNote),
                 new MySqlParameter("@p_expencetype", model.ExpenceType),

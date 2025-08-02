@@ -43,7 +43,7 @@ namespace FeesCollection.BusinessLayer.ExamService
             {
                 new MySqlParameter("p_academicId", model.AcademicYearId),
                 new MySqlParameter("p_studentId", model.UserId),
-                new MySqlParameter("p_todaysDate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow))
+                new MySqlParameter("p_todaysDate", DateTime.UtcNow.Date)
             };
             DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_get_student_exams", parameters);
             try
@@ -56,7 +56,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                         {
                             Id = Convert.ToInt32(row["id"]),
                             Title = row["title"].ToString(),
-                            ExamDate = Convert.ToDateTime(row["examDate"]),
+                            ExamDate = TimezoneHelper.GetLocaltimeFromUniversal(Convert.ToDateTime(row["examDate"])),
                             IsAllDayEvent = Convert.ToBoolean(row["isAllDayEvent"]),
                             StartTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["startTime"].ToString(),
                             EndTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["endTime"].ToString(),
@@ -121,7 +121,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                 {
                     new MySqlParameter("p_examid", examId),
                     new MySqlParameter("p_studentid", studentId),
-                    new MySqlParameter("p_examstartdate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow))
+                    new MySqlParameter("p_examstartdate", DateTime.UtcNow)
                 };
                 try
                 {
@@ -186,11 +186,11 @@ namespace FeesCollection.BusinessLayer.ExamService
 
         private bool CanStartExam(string startTime, string endTime)
         {
-            DateTime startTimeDate = TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow);
+            DateTime startTimeDate = TimezoneHelper.GetLocaltimeFromUniversal(DateTime.UtcNow);
             bool res = DateTime.TryParse(startTime, out startTimeDate);
-            DateTime endTimeDate = TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow);
+            DateTime endTimeDate = TimezoneHelper.GetLocaltimeFromUniversal(DateTime.UtcNow);
             bool res1 = DateTime.TryParse(endTime, out endTimeDate);
-            DateTime currentDateTime = TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow);
+            DateTime currentDateTime = TimezoneHelper.GetLocaltimeFromUniversal(DateTime.UtcNow);
             if (currentDateTime.Ticks > startTimeDate.Ticks && currentDateTime.Ticks < endTimeDate.Ticks) return true;
             else return false;
         }
@@ -224,7 +224,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                 new MySqlParameter("@p_id", model.Id),
                 new MySqlParameter("@p_passingstatus", passingStatus),
                 new MySqlParameter("@p_totalmarks", totalMarks),
-                new MySqlParameter("@p_examsubmitteddate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow))
+                new MySqlParameter("@p_examsubmitteddate", DateTime.UtcNow)
             };
             try
             {
@@ -252,7 +252,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                     {
                         examDetails.Id = Convert.ToInt32(row["id"]);
                         examDetails.Title = row["title"].ToString();
-                        examDetails.ExamDate = Convert.ToDateTime(row["examDate"]);
+                        examDetails.ExamDate = TimezoneHelper.GetLocaltimeFromUniversal(Convert.ToDateTime(row["examDate"]));
                         examDetails.IsAllDayEvent = Convert.ToBoolean(row["isAllDayEvent"]);
                         examDetails.StartTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["startTime"].ToString();
                         examDetails.EndTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["endTime"].ToString();

@@ -32,7 +32,7 @@ namespace FeesCollection.BusinessLayer.ExamService
         }
         #endregion
 
-        //#region Methods
+        #region Public Methods
         public async Task<ExamListModel> GetAllExams(int academicId, int userId)
         {
             List<ExamModel> exams = new List<ExamModel>();
@@ -52,7 +52,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                         {
                             Id = Convert.ToInt32(row["id"]),
                             Title = row["title"].ToString(),
-                            ExamDate = Convert.ToDateTime(row["examDate"]),
+                            ExamDate = TimezoneHelper.GetLocaltimeFromUniversal(Convert.ToDateTime(row["examDate"])),
                             IsAllDayEvent = Convert.ToBoolean(row["isAllDayEvent"]),
                             StartTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["startTime"].ToString(),
                             EndTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["endTime"].ToString(),
@@ -89,7 +89,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                     {
                         examDetails.Id = Convert.ToInt32(row["id"]);
                         examDetails.Title = row["title"].ToString();
-                        examDetails.ExamDate = Convert.ToDateTime(row["examDate"]);
+                        examDetails.ExamDate = TimezoneHelper.GetLocaltimeFromUniversal(Convert.ToDateTime(row["examDate"]));
                         examDetails.IsAllDayEvent = Convert.ToBoolean(row["isAllDayEvent"]);
                         examDetails.StartTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["startTime"].ToString();
                         examDetails.EndTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["endTime"].ToString();
@@ -111,7 +111,7 @@ namespace FeesCollection.BusinessLayer.ExamService
             MySqlParameter[] parameters = new MySqlParameter[]
             {
                 new MySqlParameter("@p_title", model.Title),
-                new MySqlParameter("@p_examDate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExamDate)),
+                new MySqlParameter("@p_examDate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExamDate).Date),
                 new MySqlParameter("@p_isAllDayEvent", model.IsAllDayEvent),
                 new MySqlParameter("@p_startTime", model.IsAllDayEvent ? "" : model.StartTime),
                 new MySqlParameter("@p_endTime", model.IsAllDayEvent ? "" : model.EndTime),
@@ -196,21 +196,22 @@ namespace FeesCollection.BusinessLayer.ExamService
                 throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
-        //#endregion
+        #endregion
 
-        //#region Private Methods
+        #region Private Methods
         private ExamListModel GetSortedExamList(List<ExamModel> exams)
         {
             ExamListModel examList = new ExamListModel();
             if (exams.Count > 0)
             {
+                DateTime today = TimezoneHelper.GetLocaltimeFromUniversal(DateTime.UtcNow).Date;
                 foreach (var item in exams)
                 {
-                    if (item.ExamDate.Date == DateTime.Today)
+                    if (item.ExamDate.Date == today)
                     {
                         examList.TodayExams.Add(item);
                     }
-                    else if (item.ExamDate.Date < DateTime.Today)
+                    else if (item.ExamDate.Date < today)
                     {
                         examList.PastExams.Add(item);
                     }
@@ -240,6 +241,6 @@ namespace FeesCollection.BusinessLayer.ExamService
                 throw ex;
             }
         }
-        //#endregion
+        #endregion
     }
 }

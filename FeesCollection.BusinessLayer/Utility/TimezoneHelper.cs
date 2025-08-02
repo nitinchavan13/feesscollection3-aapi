@@ -11,7 +11,7 @@ namespace FeesCollection.BusinessLayer.Utility
     {
         private static TimeZoneInfo INDIAN_ZONE = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
 
-        public static DateTime getLocaltimeFromUniversal(DateTime utcDateTime)
+        public static DateTime GetLocaltimeFromUniversal(DateTime utcDateTime)
         {
             return TimeZoneInfo.ConvertTimeFromUtc(utcDateTime, INDIAN_ZONE);
         }
