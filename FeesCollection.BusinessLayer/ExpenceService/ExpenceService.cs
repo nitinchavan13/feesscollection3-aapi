@@ -55,12 +55,9 @@ namespace FeesCollection.BusinessLayer.ExpenceService
                             ExpenceType = row["expencetype"].ToString()
                         });
                     }
-                    return expences.OrderByDescending(x => x.ExpenceDate).ToList();
+                    
                 }
-                else
-                {
-                    return null;
-                }
+                return expences.OrderByDescending(x => x.ExpenceDate).ToList();
             }
             catch (Exception)
             {
@@ -71,7 +68,7 @@ namespace FeesCollection.BusinessLayer.ExpenceService
         {
             MySqlParameter[] parameters = new MySqlParameter[]
             {
-                new MySqlParameter("@p_expencedate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExpenceDate).Date),
+                new MySqlParameter("@p_expencedate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExpenceDate)),
                 new MySqlParameter("@p_expenceamount", model.ExpenceAmount),
                 new MySqlParameter("@p_expencenote", model.ExpenceNote),
                 new MySqlParameter("@p_expencetype", model.ExpenceType),
@@ -93,7 +90,7 @@ namespace FeesCollection.BusinessLayer.ExpenceService
         {
             MySqlParameter[] parameters = new MySqlParameter[]
             {
-                new MySqlParameter("@p_expencedate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExpenceDate).Date),
+                new MySqlParameter("@p_expencedate", TimezoneHelper.ConvertLocalToUTCwithTimeZone(model.ExpenceDate)),
                 new MySqlParameter("@p_expenceamount", model.ExpenceAmount),
                 new MySqlParameter("@p_expencenote", model.ExpenceNote),
                 new MySqlParameter("@p_expencetype", model.ExpenceType),
