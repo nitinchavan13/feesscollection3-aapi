@@ -61,10 +61,10 @@ namespace FeesCollection.BusinessLayer.StudentEnquiry
             }
         }
 
-        public async Task<List<StudentEnquiryModel>> GetAllEnquiriesAsync(BaseModel model)
+        public async Task<List<StudentEnquiryModel>> GetAllEnquiries(BaseModel model)
         {
             List<StudentEnquiryModel> enquiries = new List<StudentEnquiryModel>();
-            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_student_enquiry_get", parameters);
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_student_enquiry_get");
             try
             {
                 if (result.Rows.Count > 0)
