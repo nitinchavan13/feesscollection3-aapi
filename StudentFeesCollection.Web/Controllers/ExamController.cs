@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.Web.Controllers
@@ -21,11 +22,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("exam/getExamsForAdmin")]
         [HttpPost]
-        public IHttpActionResult GetAllExams(BaseModel model)
+        public async Task<IHttpActionResult> GetAllExams(BaseModel model)
         {
             try
             {
-                var data = _examService.GetAllExams(model.AcademicYearId, model.UserId);
+                var data = await _examService.GetAllExams(model.AcademicYearId, model.UserId);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -36,11 +37,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("exam/getExamDetailsForAdmin/{examId}")]
         [HttpPost]
-        public IHttpActionResult GetExamDetails(int examId)
+        public async Task<IHttpActionResult> GetExamDetails(int examId)
         {
             try
             {
-                var data = _examService.GetExamDetails(examId);
+                var data = await _examService.GetExamDetails(examId);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -51,11 +52,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("exam/getExamQuestions/{examId}")]
         [HttpPost]
-        public IHttpActionResult CreateExam(int examId)
+        public async Task<IHttpActionResult> CreateExam(int examId)
         {
             try
             {
-                var data = _examService.GetAllExamQuestion(examId);
+                var data = await _examService.GetAllExamQuestion(examId);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -66,11 +67,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("exam/createNewExam")]
         [HttpPost]
-        public IHttpActionResult CreateExam(ExamModel model)
+        public async Task<IHttpActionResult> CreateExam(ExamModel model)
         {
             try
             {
-                var data = _examService.CreateNewExam(model);
+                var data = await _examService.CreateNewExam(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -81,11 +82,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("exam/createQuestion/{examId}")]
         [HttpPost]
-        public IHttpActionResult CreateQuestion(int examId, QuestionModel model)
+        public async Task<IHttpActionResult> CreateQuestion(int examId, QuestionModel model)
         {
             try
             {
-                var data = _examService.CreateQuestion(model, examId);
+                var data = await _examService.CreateQuestion(model, examId);
                 return Ok(data);
             }
             catch (Exception ex)

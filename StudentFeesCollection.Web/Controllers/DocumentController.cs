@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using IronPdf;
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -8,32 +10,33 @@ namespace StudentFeesCollection.Web.Controllers
 {
     public class DocumentController : ApiController
     {
-        //public IHttpActionResult GeneratePdf()
-        //{
-        //    try
-        //    {
-        //        //var Renderer = new IronPdf.ChromePdfRenderer();
-        //        //var PDF = Renderer.RenderHtmlAsPdf("<h1>Hello IronPdf</h1>");
-        //        //var path = PDF.SaveAs("pixel-perfect.pdf");
-        //        //HttpResponseMessage httpResponseMessage = Request.CreateResponse(HttpStatusCode.OK);
-        //        //httpResponseMessage.Content = new StreamContent(path.Stream);
-        //        //httpResponseMessage.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment");
-        //        //httpResponseMessage.Content.Headers.ContentDisposition.FileName = "first.pdf";
-        //        //httpResponseMessage.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        public IHttpActionResult GeneratePdf()
+        {
+            try
+            {
+                //var Renderer = new IronPdf.ChromePdfRenderer();
+                //var PDF = Renderer.RenderHtmlAsPdf("<h1>Hello IronPdf</h1>");
+                //var path = PDF.SaveAs("pixel-perfect.pdf");
+                //HttpResponseMessage httpResponseMessage = Request.CreateResponse(HttpStatusCode.OK);
+                //httpResponseMessage.Content = new StreamContent(path.Stream);
+                //httpResponseMessage.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment");
+                //httpResponseMessage.Content.Headers.ContentDisposition.FileName = "first.pdf";
+                //httpResponseMessage.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
-        //        //return httpResponseMessage;
-        //        var Renderer = new ChromePdfRenderer();
-        //        var myPdf = Renderer.RenderUrlAsPdf("https://www.nuget.org/packages/IronPdf");
-        //        // Watermarks all pages with red "SAMPLE" text at a custom location.
-        //        // Also adding a link to the watermark on-click
-        //        myPdf.WatermarkAllPages("<h2 style='color:red'>SAMPLE</h2>", IronPdf.Editing.WaterMarkLocation.MiddleCenter, 50, -45, "https://www.nuget.org/packages/IronPdf");
-        //        myPdf.SaveAs(@"C:\Path\To\Watermarked.pdf");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
+                //return httpResponseMessage;
+                var Renderer = new ChromePdfRenderer();
+                var myPdf = Renderer.RenderUrlAsPdf("https://www.nuget.org/packages/IronPdf");
+                // Watermarks all pages with red "SAMPLE" text at a custom location.
+                // Also adding a link to the watermark on-click
+                myPdf.WatermarkAllPages("<h2 style='color:red'>SAMPLE</h2>", IronPdf.Editing.WaterMarkLocation.MiddleCenter, 50, -45, "https://www.nuget.org/packages/IronPdf");
+                myPdf.SaveAs(@"C:\Path\To\Watermarked.pdf");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         public HttpResponseMessage Display(string docid)
         {

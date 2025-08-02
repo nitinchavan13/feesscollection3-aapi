@@ -3,9 +3,12 @@ using FeesCollection.DatabaseLayer.Helpers;
 using FeesCollection.ResponseModel.BaseModels;
 using FeesCollection.ResponseModel.ExamModels;
 using FeesCollection.ResponseModel.StudentExamModels;
+using FeesCollection.ResponseModel.Utility;
+using MySqlConnector;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,10 +17,10 @@ namespace FeesCollection.BusinessLayer.ExamService
 {
     public interface IStudentExamService
     {
-         List<StudentExamModel> FetchMyTodaysExams(BaseModel model);
-        int UpdateExamAttendance(int studentId, int examId);
-        List<StudentQuestionModel> FetchQuestions(int examId);
-        bool SaveExamAnswers(StudentExamResponse model);
+        Task<List<StudentExamModel>> FetchMyTodaysExams(BaseModel model);
+        Task<int> UpdateExamAttendance(int studentId, int examId);
+        Task<List<StudentQuestionModel>> FetchQuestions(int examId);
+        Task<bool> SaveExamAnswers(StudentExamResponse model);
     }
 
     public class StudentExamService : IStudentExamService
@@ -28,126 +31,101 @@ namespace FeesCollection.BusinessLayer.ExamService
         public StudentExamService()
         {
             _rand = new Random();
-            _dBHelper = new DBHelper();
-            _dBHelper.CreateDBObjects(ConfigurationManager.AppSettings["mysqlConnectionString"], DBHelper.DbProviders.MySql);
+            _dBHelper = new DBHelper(ConfigurationManager.AppSettings["mysqlConnectionString"]);
         }
         #endregion
 
-        public List<StudentQuestionModel> GenerateRandomQuestionSequence(List<StudentQuestionModel> listToShuffle)
-        {
-            for (int i = listToShuffle.Count - 1; i > 0; i--)
-            {
-                var k = _rand.Next(i + 1);
-                var value = listToShuffle[k];
-                listToShuffle[k] = listToShuffle[i];
-                listToShuffle[i] = value;
-            }
-            return listToShuffle;
-        }
-
-        public List<StudentExamModel> FetchMyTodaysExams(BaseModel model)
+        #region Public methods
+        public async Task<List<StudentExamModel>> FetchMyTodaysExams(BaseModel model)
         {
             List<StudentExamModel> examList = new List<StudentExamModel>();
-            _dBHelper.AddParameter("p_academicId", model.AcademicYearId);
-            _dBHelper.AddParameter("p_studentId", model.UserId);
-            _dBHelper.AddParameter("p_todaysDate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow));
-            var reader = _dBHelper.ExecuteReader("sp_get_student_exams", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[]
+            {
+                new MySqlParameter("p_academicId", model.AcademicYearId),
+                new MySqlParameter("p_studentId", model.UserId),
+                new MySqlParameter("p_todaysDate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow))
+            };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_get_student_exams", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    foreach (DataRow row in result.Rows)
                     {
-                        StudentExamModel examDetails = new StudentExamModel();
-                        examDetails.Id = Convert.ToInt32(reader["id"]);
-                        examDetails.Title = reader["title"].ToString();
-                        examDetails.ExamDate = Convert.ToDateTime(reader["examDate"]);
-                        examDetails.IsAllDayEvent = Convert.ToBoolean(reader["isAllDayEvent"]);
-                        examDetails.StartTime = Convert.ToBoolean(reader["isAllDayEvent"]) ? "" : reader["startTime"].ToString();
-                        examDetails.EndTime = Convert.ToBoolean(reader["isAllDayEvent"]) ? "" : reader["endTime"].ToString();
-                        examDetails.TotalMarks = Convert.ToInt32(reader["totalMarks"]);
-                        examDetails.MinPassingMarks = Convert.ToInt32(reader["minPassingMarks"]);
-                        examDetails.Duration = Convert.ToInt32(reader["durationInMinutes"]);
-                        examDetails.IsAttempted = reader["isattempted"] == DBNull.Value ? false : Convert.ToBoolean(reader["isattempted"]);
-                        examDetails.IsComplete = reader["iscompleted"] == DBNull.Value ? false : Convert.ToBoolean(reader["iscompleted"]);
-                        examList.Add(examDetails);
+                        StudentExamModel examDetails = new StudentExamModel
+                        {
+                            Id = Convert.ToInt32(row["id"]),
+                            Title = row["title"].ToString(),
+                            ExamDate = Convert.ToDateTime(row["examDate"]),
+                            IsAllDayEvent = Convert.ToBoolean(row["isAllDayEvent"]),
+                            StartTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["startTime"].ToString(),
+                            EndTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["endTime"].ToString(),
+                            TotalMarks = Convert.ToInt32(row["totalMarks"]),
+                            MinPassingMarks = Convert.ToInt32(row["minPassingMarks"]),
+                            Duration = Convert.ToInt32(row["durationInMinutes"]),
+                            IsAttempted = row["isattempted"] == DBNull.Value ? false : Convert.ToBoolean(row["isattempted"]),
+                            IsComplete = row["iscompleted"] == DBNull.Value ? false : Convert.ToBoolean(row["iscompleted"])
+                        };
                         examDetails.CanStartExam = CanStartExam(examDetails.StartTime, examDetails.EndTime);
+                        examList.Add(examDetails);
+
                     }
-                    return examList;
                 }
-                else
-                {
-                    return examList;
-                }
+                return examList;
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
 
-        private bool CanStartExam(string startTime, string endTime)
-        {
-            DateTime startTimeDate;
-            bool res = DateTime.TryParse(startTime, out startTimeDate);
-            DateTime endTimeDate;
-            bool res1 = DateTime.TryParse(endTime, out endTimeDate);
-            DateTime currentDateTime = DateTime.Now;
-            if (currentDateTime.Ticks > startTimeDate.Ticks && currentDateTime.Ticks < endTimeDate.Ticks) return true;
-            else return false;
-        }
-
-        public List<StudentQuestionModel> FetchQuestions(int examId)
+        public async Task<List<StudentQuestionModel>> FetchQuestions(int examId)
         {
             List<StudentQuestionModel> questions = new List<StudentQuestionModel>();
-            _dBHelper.AddParameter("p_examid", examId);
-            var reader = _dBHelper.ExecuteReader("sp_get_student_exam_questions", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[]
+            {
+                new MySqlParameter("p_examid", examId)
+            };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_get_student_exam_questions", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    foreach (DataRow row in result.Rows)
                     {
                         questions.Add(new StudentQuestionModel()
                         {
-                            Id = Convert.ToInt32(reader["id"]),
-                            QuestionText = reader["questiontext"].ToString(),
-                            Option1 = reader["option1"].ToString(),
-                            Option2 = reader["option2"].ToString(),
-                            Option3 = reader["option3"].ToString(),
-                            Option4 = reader["option4"].ToString()
+                            Id = Convert.ToInt32(row["id"]),
+                            QuestionText = row["questiontext"].ToString(),
+                            Option1 = row["option1"].ToString(),
+                            Option2 = row["option2"].ToString(),
+                            Option3 = row["option3"].ToString(),
+                            Option4 = row["option4"].ToString()
                         });
                     }
-                    return GenerateRandomQuestionSequence(questions);
                 }
-                else
-                {
-                    return questions;
-                }
+                return GenerateRandomQuestionSequence(questions);
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
 
-        public int UpdateExamAttendance(int studentId, int examId)
+        public async Task<int> UpdateExamAttendance(int studentId, int examId)
         {
             bool isAlreadyAttempted = CheckExamAttempt(studentId, examId);
-            if(!isAlreadyAttempted)
+            if (!isAlreadyAttempted)
             {
-                _dBHelper.AddParameter("p_examid", examId);
-                _dBHelper.AddParameter("p_studentid", studentId);
-                _dBHelper.AddParameter("p_examstartdate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow));
+                MySqlParameter[] parameters = new MySqlParameter[]
+                {
+                    new MySqlParameter("p_examid", examId),
+                    new MySqlParameter("p_studentid", studentId),
+                    new MySqlParameter("p_examstartdate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow))
+                };
                 try
                 {
-                    var id = _dBHelper.ExecuteScaler("sp_add_student_attempt", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+                    var id = await _dBHelper.ExecuteScalarAsync("sp_add_student_attempt", parameters);
                     return Convert.ToInt32(id);
                 }
                 catch (Exception ex)
@@ -161,10 +139,10 @@ namespace FeesCollection.BusinessLayer.ExamService
             }
         }
 
-        public bool SaveExamAnswers(StudentExamResponse model)
+        public async Task<bool> SaveExamAnswers(StudentExamResponse model)
         {
-            ExamModel examDetails = GetExamDetails(model.ExamId);
-            List<QuestionModel> examQuestions = GetAllExamQuestion(model.ExamId);
+            ExamModel examDetails = await GetExamDetailsAsync(model.ExamId);
+            List<QuestionModel> examQuestions = await GetAllExamQuestionAsync(model.ExamId);
             List<StudentBulkResponse> studentResponse = new List<StudentBulkResponse>();
             var totalMarks = 0;
             foreach (var answer in model.Answers)
@@ -175,7 +153,7 @@ namespace FeesCollection.BusinessLayer.ExamService
                 response.SelectedOption = answer.SelectedOption;
                 response.IsAnswerCorrect = false;
                 var question = examQuestions.FirstOrDefault(x => x.Id == answer.Id);
-                if(question != null && answer.SelectedOption.ToLower() == question.CorrectOption.ToLower())
+                if (question != null && answer.SelectedOption.ToLower() == question.CorrectOption.ToLower())
                 {
                     totalMarks = totalMarks + 2;
                     response.IsAnswerCorrect = true;
@@ -184,22 +162,73 @@ namespace FeesCollection.BusinessLayer.ExamService
             }
 
             bool passingStatus = totalMarks >= examDetails.MinPassingMarks ? true : false;
-            SaveFinalResult(model, totalMarks, passingStatus);
+            await SaveFinalResult(model, totalMarks, passingStatus);
 
-            _dBHelper.SaveBulkStudentResponse(studentResponse);
+            await SaveBulkStudentResponse(studentResponse);
 
             return true;
         }
+        #endregion
 
-        private void SaveFinalResult(StudentExamResponse model, int totalMarks, bool passingStatus)
+        #region Private methods
+
+        private List<StudentQuestionModel> GenerateRandomQuestionSequence(List<StudentQuestionModel> listToShuffle)
         {
-            _dBHelper.AddParameter("p_id", model.Id);
-            _dBHelper.AddParameter("p_passingstatus", passingStatus);
-            _dBHelper.AddParameter("p_totalmarks", totalMarks);
-            _dBHelper.AddParameter("p_examsubmitteddate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow));
+            for (int i = listToShuffle.Count - 1; i > 0; i--)
+            {
+                var k = _rand.Next(i + 1);
+                var value = listToShuffle[k];
+                listToShuffle[k] = listToShuffle[i];
+                listToShuffle[i] = value;
+            }
+            return listToShuffle;
+        }
+
+        private bool CanStartExam(string startTime, string endTime)
+        {
+            DateTime startTimeDate = TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow);
+            bool res = DateTime.TryParse(startTime, out startTimeDate);
+            DateTime endTimeDate = TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow);
+            bool res1 = DateTime.TryParse(endTime, out endTimeDate);
+            DateTime currentDateTime = TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow);
+            if (currentDateTime.Ticks > startTimeDate.Ticks && currentDateTime.Ticks < endTimeDate.Ticks) return true;
+            else return false;
+        }
+
+        private async Task SaveBulkStudentResponse(List<StudentBulkResponse> studentResponse)
+        {
+            StringBuilder sCommand = new StringBuilder("INSERT INTO `tblstudentexamattemptdetails`(`examattemptid`,`questionid`,`selectedoption`,`isanswercorrect`) VALUES ");
+            List<string> Rows = new List<string>();
+            foreach (var item in studentResponse)
+            {
+                Rows.Add(string.Format("('{0}','{1}', '{2}', '{3}')",
+                    MySqlHelper.EscapeString(item.Id.ToString()), MySqlHelper.EscapeString(item.QuestionId.ToString()),
+                    MySqlHelper.EscapeString(item.SelectedOption), MySqlHelper.EscapeString(item.IsAnswerCorrect ? "1" : "")));
+            }
+            sCommand.Append(string.Join(",", Rows));
+            sCommand.Append(";");
             try
             {
-                _dBHelper.ExecuteNonQuery("sp_add_student_exam_response", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+                await _dBHelper.ExecuteNonQueryAsync(sCommand.ToString());
+            }
+            catch (Exception)
+            {
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
+            }
+        }
+
+        private async Task SaveFinalResult(StudentExamResponse model, int totalMarks, bool passingStatus)
+        {
+            MySqlParameter[] parameters = new MySqlParameter[]
+            {
+                new MySqlParameter("@p_id", model.Id),
+                new MySqlParameter("@p_passingstatus", passingStatus),
+                new MySqlParameter("@p_totalmarks", totalMarks),
+                new MySqlParameter("@p_examsubmitteddate", TimezoneHelper.getLocaltimeFromUniversal(DateTime.UtcNow))
+            };
+            try
+            {
+                await _dBHelper.ExecuteStoredProcedureNonQueryAsync("sp_add_student_exam_response", parameters);
             }
             catch (Exception ex)
             {
@@ -207,90 +236,81 @@ namespace FeesCollection.BusinessLayer.ExamService
             }
         }
 
-        private ExamModel GetExamDetails(int examId)
+        private async Task<ExamModel> GetExamDetailsAsync(int examId)
         {
             ExamModel examDetails = new ExamModel();
-            _dBHelper.AddParameter("p_examId", examId);
-            var reader = _dBHelper.ExecuteReader("sp_exam_get_details", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[]
+            {
+                new MySqlParameter("@p_examId", examId)
+            };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_exam_get_details", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    foreach (DataRow row in result.Rows)
                     {
-                        examDetails.Id = Convert.ToInt32(reader["id"]);
-                        examDetails.Title = reader["title"].ToString();
-                        examDetails.ExamDate = Convert.ToDateTime(reader["examDate"]);
-                        examDetails.IsAllDayEvent = Convert.ToBoolean(reader["isAllDayEvent"]);
-                        examDetails.StartTime = Convert.ToBoolean(reader["isAllDayEvent"]) ? "" : reader["startTime"].ToString();
-                        examDetails.EndTime = Convert.ToBoolean(reader["isAllDayEvent"]) ? "" : reader["endTime"].ToString();
-                        examDetails.TotalMarks = Convert.ToInt32(reader["totalMarks"]);
-                        examDetails.MinPassingMarks = Convert.ToInt32(reader["minPassingMarks"]);
-                        examDetails.Duration = Convert.ToInt32(reader["durationInMinutes"]);
-
+                        examDetails.Id = Convert.ToInt32(row["id"]);
+                        examDetails.Title = row["title"].ToString();
+                        examDetails.ExamDate = Convert.ToDateTime(row["examDate"]);
+                        examDetails.IsAllDayEvent = Convert.ToBoolean(row["isAllDayEvent"]);
+                        examDetails.StartTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["startTime"].ToString();
+                        examDetails.EndTime = Convert.ToBoolean(row["isAllDayEvent"]) ? "" : row["endTime"].ToString();
+                        examDetails.TotalMarks = Convert.ToInt32(row["totalMarks"]);
+                        examDetails.MinPassingMarks = Convert.ToInt32(row["minPassingMarks"]);
+                        examDetails.Duration = Convert.ToInt32(row["durationInMinutes"]);
                     }
-                    return examDetails;
                 }
-                else
-                {
-                    return examDetails;
-                }
+                return examDetails;
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
 
-        private List<QuestionModel> GetAllExamQuestion(int examId)
+        private async Task<List<QuestionModel>> GetAllExamQuestionAsync(int examId)
         {
             List<QuestionModel> examQuestions = new List<QuestionModel>();
-            _dBHelper.AddParameter("p_examId", examId);
-            var reader = _dBHelper.ExecuteReader("sp_get_exam_questions_for_admin", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open);
+            MySqlParameter[] parameters = new MySqlParameter[] { new MySqlParameter("@p_examId", examId) };
+            DataTable result = await _dBHelper.ExecuteStoredProcedureDataTableAsync("sp_get_exam_questions_for_admin", parameters);
             try
             {
-                if (reader.HasRows)
+                if (result.Rows.Count > 0)
                 {
-                    while (reader.Read())
+                    foreach (DataRow row in result.Rows)
                     {
                         examQuestions.Add(new QuestionModel()
                         {
-                            Id = Convert.ToInt32(reader["id"]),
-                            QuestionText = reader["questiontext"].ToString(),
-                            Option1 = reader["option1"].ToString(),
-                            Option2 = reader["option2"].ToString(),
-                            Option3 = reader["option3"].ToString(),
-                            Option4 = reader["option4"].ToString(),
-                            CorrectOption = reader["correctOption"].ToString(),
-                            MarkPerQuestion = Convert.ToInt32(reader["markPerQuestion"])
+                            Id = Convert.ToInt32(row["id"]),
+                            QuestionText = row["questiontext"].ToString(),
+                            Option1 = row["option1"].ToString(),
+                            Option2 = row["option2"].ToString(),
+                            Option3 = row["option3"].ToString(),
+                            Option4 = row["option4"].ToString(),
+                            CorrectOption = row["correctOption"].ToString(),
+                            MarkPerQuestion = Convert.ToInt32(row["markPerQuestion"])
                         });
                     }
-                    return examQuestions;
                 }
-                else
-                {
-                    return examQuestions;
-                }
+                return examQuestions;
             }
-            finally
+            catch (Exception)
             {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
+                throw new Exception(AppConstants.GENERIC_ERROR_MSG);
             }
         }
 
         private bool CheckExamAttempt(int studentId, int examId)
         {
-            _dBHelper.AddParameter("p_examid", examId);
-            _dBHelper.AddParameter("p_studentid", studentId);
+            MySqlParameter[] parameters = new MySqlParameter[]
+            {
+                new MySqlParameter("p_examid", examId),
+                new MySqlParameter("p_studentid", studentId)
+            };
             try
             {
-                int attemptCount = Convert.ToInt32(_dBHelper.ExecuteScaler("sp_student_check_exam_already_attempted", System.Data.CommandType.StoredProcedure, System.Data.ConnectionState.Open));
+                int attemptCount = Convert.ToInt32(_dBHelper.ExecuteScalarAsync("sp_student_check_exam_already_attempted", parameters));
                 if (attemptCount > 1) return true;
                 else return false;
             }
@@ -298,13 +318,7 @@ namespace FeesCollection.BusinessLayer.ExamService
             {
                 throw new Exception(ex.Message);
             }
-            finally
-            {
-                if (_dBHelper.connection.State == System.Data.ConnectionState.Open)
-                {
-                    _dBHelper.connection.Close();
-                }
-            }
-        }
+        } 
+        #endregion
     }
 }

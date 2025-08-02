@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace StudentFeesCollection.Web.Controllers
@@ -21,11 +22,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("studExam/getExamsForStudent")]
         [HttpPost]
-        public IHttpActionResult GetExams(BaseModel model)
+        public async Task<IHttpActionResult> GetExams(BaseModel model)
         {
             try
             {
-                var data = _examService.FetchMyTodaysExams(model);
+                var data = await _examService.FetchMyTodaysExams(model);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -36,11 +37,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("studExam/getExamQuestions/{examId}")]
         [HttpPost]
-        public IHttpActionResult GetExamQuestions(int examId)
+        public async Task<IHttpActionResult> GetExamQuestions(int examId)
         {
             try
             {
-                var data = _examService.FetchQuestions(examId);
+                var data = await _examService.FetchQuestions(examId);
                 return Ok(data);
             }
             catch (Exception ex)
@@ -51,11 +52,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("studExam/updateAttempt/{examId}")]
         [HttpPost]
-        public IHttpActionResult UpdateAttempt(int examId, BaseModel model)
+        public async Task<IHttpActionResult> UpdateAttempt(int examId, BaseModel model)
         {
             try
             {
-                var data = _examService.UpdateExamAttendance(model.UserId, examId);
+                var data = await _examService.UpdateExamAttendance(model.UserId, examId);
                 return Ok(new { id = data });
             }
             catch (Exception ex)
@@ -66,11 +67,11 @@ namespace StudentFeesCollection.Web.Controllers
 
         [Route("studExam/saveExamAnswers")]
         [HttpPost]
-        public IHttpActionResult SaveExamAnswers(StudentExamResponse model)
+        public async Task<IHttpActionResult> SaveExamAnswers(StudentExamResponse model)
         {
             try
             {
-                var data = _examService.SaveExamAnswers(model);
+                var data = await _examService.SaveExamAnswers(model);
                 return Ok(new { id = data });
             }
             catch (Exception ex)
